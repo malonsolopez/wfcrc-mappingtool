@@ -79,6 +79,18 @@ public class Collect extends Application {
     }
 
     public ActivityLogger getActivityLogger() {
+        if(mActivityLogger == null){
+            try {
+                PropertyManager mgr = new PropertyManager(this);
+
+                FormController.initializeJavaRosa(mgr);
+
+                mActivityLogger = new ActivityLogger(
+                        mgr.getSingularProperty(PropertyManager.DEVICE_ID_PROPERTY));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
         return mActivityLogger;
     }
 
@@ -227,12 +239,16 @@ public class Collect extends Application {
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
         super.onCreate();
 
-        PropertyManager mgr = new PropertyManager(this);
+        try {
+            PropertyManager mgr = new PropertyManager(this);
 
-        FormController.initializeJavaRosa(mgr);
-        
-        mActivityLogger = new ActivityLogger(
-                mgr.getSingularProperty(PropertyManager.DEVICE_ID_PROPERTY));
+            FormController.initializeJavaRosa(mgr);
+
+            mActivityLogger = new ActivityLogger(
+                    mgr.getSingularProperty(PropertyManager.DEVICE_ID_PROPERTY));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 }

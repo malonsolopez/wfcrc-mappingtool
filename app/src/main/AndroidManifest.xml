@@ -62,6 +62,7 @@
         android:smallScreens="true" />
 
     <application
+        android:name="com.wfcrc.mappingtool.application.Collect"
         android:supportsRtl="true"
         android:largeHeap="true"
         android:installLocation="auto"
@@ -69,6 +70,8 @@
         android:label="@string/app_name"
         android:theme="@style/Collect"
         >
+
+
 
 
 

@@ -16,8 +16,12 @@ package com.wfcrc.mappingtool.activities;
 
 import mappingtool.wfcrc.com.coralreefmappingtool.R;
 import com.wfcrc.mappingtool.application.Collect;
+import com.wfcrc.mappingtool.database.ActivityLogger;
+import com.wfcrc.mappingtool.logic.FormController;
+import com.wfcrc.mappingtool.logic.PropertyManager;
 import com.wfcrc.mappingtool.preferences.PreferencesActivity;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -31,6 +35,8 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.view.View;
 import android.view.Window;
 import android.widget.ImageView;
@@ -40,6 +46,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class SplashScreenActivity extends Activity {
 
@@ -54,6 +64,14 @@ public class SplashScreenActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        //checkPermissions
+        checkPermissions();
+
+
+
+    }
+
+    private void continueLauchingafterPermissions(){
         // must be at the beginning of any activity that can be called from an external intent
         try {
             Collect.createODKDirs();
@@ -65,7 +83,7 @@ public class SplashScreenActivity extends Activity {
         mImageMaxWidth = getWindowManager().getDefaultDisplay().getWidth();
 
         // this splash screen should be a blank slate
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        //requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.splash_screen);
 
         // get the shared preferences object
@@ -76,17 +94,17 @@ public class SplashScreenActivity extends Activity {
         PackageInfo packageInfo = null;
         try {
             packageInfo =
-                getPackageManager().getPackageInfo(getPackageName(), PackageManager.GET_META_DATA);
+                    getPackageManager().getPackageInfo(getPackageName(), PackageManager.GET_META_DATA);
         } catch (NameNotFoundException e) {
             e.printStackTrace();
         }
 
         boolean firstRun = mSharedPreferences.getBoolean(PreferencesActivity.KEY_FIRST_RUN, true);
         boolean showSplash =
-            mSharedPreferences.getBoolean(PreferencesActivity.KEY_SHOW_SPLASH, false);
+                mSharedPreferences.getBoolean(PreferencesActivity.KEY_SHOW_SPLASH, false);
         String splashPath =
-            mSharedPreferences.getString(PreferencesActivity.KEY_SPLASH_PATH,
-                getString(R.string.default_splash_path));
+                mSharedPreferences.getString(PreferencesActivity.KEY_SPLASH_PATH,
+                        getString(R.string.default_splash_path));
 
         // if you've increased version code, then update the version number and set firstRun to true
         if (mSharedPreferences.getLong(PreferencesActivity.KEY_LAST_VERSION, 0) < packageInfo.versionCode) {
@@ -104,7 +122,7 @@ public class SplashScreenActivity extends Activity {
         } else {
             endSplashScreen();
         }
-
+        //Collect.getInstance().getActivityLogger().logOnStart(this);
     }
 
 
@@ -223,7 +241,7 @@ public class SplashScreenActivity extends Activity {
     @Override
     protected void onStart() {
     	super.onStart();
-		Collect.getInstance().getActivityLogger().logOnStart(this);
+		//Collect.getInstance().getActivityLogger().logOnStart(this);
     }
 
     @Override
@@ -231,5 +249,93 @@ public class SplashScreenActivity extends Activity {
 		Collect.getInstance().getActivityLogger().logOnStop(this);
     	super.onStop();
     }
+
+    /**
+     *
+     * Created by maria on 7/28/17
+     */
+    private int mHasWriteExternalStoragePermission;
+    private int mHasReadExternalStoragePermission;
+    private int mHasFineLocationPermission;
+    private int mHasCoarseLocationPermission;
+    private int mHasPhoneStatePermission;
+    private static final int WRITE_STORAGE_PERMISSION = 0;
+    private static final int READ_STORAGE_PERMISSION = 1;
+    private static final int FINE_LOCATION_PERMISSION = 2;
+    private static final int COARSE_LOCATION_PERMISSION = 3;
+    private static final int PHONE_PERMISSION = 4;
+    final private int REQUEST_CODE_ASK_MULTIPLE_PERMISSIONS = 124;
+
+    /**
+     *
+     * Created by maria on 7/28/17
+     */
+    public void checkPermissions() {
+        List<String> permissionsNeeded = new ArrayList<String>();
+        mHasWriteExternalStoragePermission = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        mHasReadExternalStoragePermission = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE);
+        mHasFineLocationPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
+        mHasCoarseLocationPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION);
+        mHasPhoneStatePermission = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE);
+        if (mHasWriteExternalStoragePermission != PackageManager.PERMISSION_GRANTED) {
+            permissionsNeeded.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        }
+        if(mHasReadExternalStoragePermission!= PackageManager.PERMISSION_GRANTED){
+            permissionsNeeded.add(Manifest.permission.READ_EXTERNAL_STORAGE);
+        }
+        if(mHasFineLocationPermission!= PackageManager.PERMISSION_GRANTED){
+            permissionsNeeded.add(Manifest.permission.ACCESS_FINE_LOCATION);
+        }
+        if(mHasCoarseLocationPermission!= PackageManager.PERMISSION_GRANTED){
+            permissionsNeeded.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+        }
+        if(mHasPhoneStatePermission != PackageManager.PERMISSION_GRANTED){
+            permissionsNeeded.add(Manifest.permission.READ_PHONE_STATE);
+        }
+        if(!permissionsNeeded.isEmpty()){
+            ActivityCompat.requestPermissions(this,
+                    permissionsNeeded.toArray(new String[permissionsNeeded.size()]),
+                    REQUEST_CODE_ASK_MULTIPLE_PERMISSIONS);
+        }else{
+            continueLauchingafterPermissions();
+        }
+    }
+
+    /**
+     *
+     * Created by maria on 7/28/17
+     */
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case REQUEST_CODE_ASK_MULTIPLE_PERMISSIONS:
+                Map<String, Integer> perms = new HashMap<String, Integer>();
+                // Initial
+                perms.put(Manifest.permission.WRITE_EXTERNAL_STORAGE, PackageManager.PERMISSION_GRANTED);
+                perms.put(Manifest.permission.READ_EXTERNAL_STORAGE, PackageManager.PERMISSION_GRANTED);
+                perms.put(Manifest.permission.ACCESS_FINE_LOCATION, PackageManager.PERMISSION_GRANTED);
+                perms.put(Manifest.permission.ACCESS_COARSE_LOCATION, PackageManager.PERMISSION_GRANTED);
+                perms.put(Manifest.permission.READ_PHONE_STATE, PackageManager.PERMISSION_GRANTED);
+                // Fill with results
+                for (int i = 0; i < permissions.length; i++)
+                    perms.put(permissions[i], grantResults[i]);
+                // Check for permissions
+                if (perms.get(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+                        && perms.get(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+                        && perms.get(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                        && perms.get(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                        && perms.get(Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
+                    // All Permissions Granted
+                    continueLauchingafterPermissions();
+                }else {
+                    // Permission Denied
+                    finish();
+                }
+                break;
+            default:
+                super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        }
+    }
+
 
 }

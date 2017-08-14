@@ -10,6 +10,7 @@ android {
         targetSdkVersion 23
         versionCode 1
         versionName "1.0"
+        multiDexEnabled true
     }
     buildTypes {
         release {
@@ -17,12 +18,18 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+    dexOptions {
+        incremental true
+        javaMaxHeapSize "4g"
+    }
 }
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     testCompile 'junit:junit:4.12'
     compile 'com.google.android.gms:play-services:4.1.32'
+    compile 'com.android.support:multidex:1.0.0'
     compile files('libs/commons-io-2.4.jar')
     compile files('libs/gdata-core-1.0.jar')
     compile files('libs/gdata-spreadsheet-3.0.jar')
